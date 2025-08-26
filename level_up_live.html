@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de">    <!-- Version 2.0 -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -77,6 +77,61 @@
             background:#111; color:#0f0; padding:10px; margin-top:10px; height:100px;
             overflow:auto; font-family:monospace; border-radius:10px;
         }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #8e8e93;
+        }
+        .modal-footer {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .switch-auth {
+            color: #007AFF;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .error-message {
+            color: #FF3B30;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -122,35 +177,271 @@
         <div class="posts-container" id="postsContainer"></div>
     </div>
 
-    <script>
-        let users = [];
-        let posts = [];
-        let currentUser = { name: "DemoUser" }; // Demo-Nutzer für Tests
-        let nextPostId = 1;
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Anmelden</h2>
+                <button class="close-btn" onclick="hideModals()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label for="loginEmail">E-Mail</label>
+                <input type="email" id="loginEmail" placeholder="Deine E-Mail-Adresse">
+                <div class="error-message" id="loginEmailError"></div>
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Passwort</label>
+                <input type="password" id="loginPassword" placeholder="Dein Passwort">
+                <div class="error-message" id="loginPasswordError"></div>
+            </div>
+            <button class="submit-btn" style="width: 100%;" onclick="login()">Anmelden</button>
+            <div class="modal-footer">
+                <p>Noch kein Konto? <span class="switch-auth" onclick="showRegisterModal()">Registrieren</span></p>
+            </div>
+        </div>
+    </div>
 
-        function showHome() { renderPosts(); }
+    <!-- Register Modal -->
+    <div class="modal" id="registerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Registrieren</h2>
+                <button class="close-btn" onclick="hideModals()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label for="registerName">Name</label>
+                <input type="text" id="registerName" placeholder="Dein Anzeigename">
+                <div class="error-message" id="registerNameError"></div>
+            </div>
+            <div class="form-group">
+                <label for="registerEmail">E-Mail</label>
+                <input type="email" id="registerEmail" placeholder="Deine E-Mail-Adresse">
+                <div class="error-message" id="registerEmailError"></div>
+            </div>
+            <div class="form-group">
+                <label for="registerPassword">Passwort</label>
+                <input type="password" id="registerPassword" placeholder="Wähle ein sicheres Passwort">
+                <div class="error-message" id="registerPasswordError"></div>
+            </div>
+            <div class="form-group">
+                <label for="registerPasswordConfirm">Passwort bestätigen</label>
+                <input type="password" id="registerPasswordConfirm" placeholder="Wiederhole dein Passwort">
+                <div class="error-message" id="registerPasswordConfirmError"></div>
+            </div>
+            <button class="submit-btn" style="width: 100%;" onclick="register()">Konto erstellen</button>
+            <div class="modal-footer">
+                <p>Bereits ein Konto? <span class="switch-auth" onclick="showLoginModal()">Anmelden</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let users = JSON.parse(localStorage.getItem('levelUpLife_users')) || [];
+        let posts = JSON.parse(localStorage.getItem('levelUpLife_posts')) || [];
+        let currentUser = JSON.parse(localStorage.getItem('levelUpLife_currentUser')) || null;
+        let nextPostId = parseInt(localStorage.getItem('levelUpLife_nextPostId')) || 1;
+
+        // Initialisierung beim Laden der Seite
+        document.addEventListener('DOMContentLoaded', function() {
+            updateUI();
+            renderPosts();
+        });
+
+        function updateUI() {
+            if (currentUser) {
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('userInfo').style.display = 'block';
+                document.getElementById('username').textContent = currentUser.name;
+                document.getElementById('createPost').classList.add('active');
+            } else {
+                document.getElementById('authSection').style.display = 'flex';
+                document.getElementById('userInfo').style.display = 'none';
+                document.getElementById('createPost').classList.remove('active');
+            }
+        }
+
+        function showLoginModal() {
+            hideModals();
+            document.getElementById('loginModal').style.display = 'flex';
+        }
+
+        function showRegisterModal() {
+            hideModals();
+            document.getElementById('registerModal').style.display = 'flex';
+        }
+
+        function hideModals() {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.style.display = 'none';
+            });
+            clearErrors();
+        }
+
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.style.display = 'none';
+                el.textContent = '';
+            });
+        }
+
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+
+        function login() {
+            clearErrors();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            let isValid = true;
+            
+            if (!email) {
+                showError('loginEmailError', 'Bitte gib deine E-Mail-Adresse ein.');
+                isValid = false;
+            }
+            
+            if (!password) {
+                showError('loginPasswordError', 'Bitte gib dein Passwort ein.');
+                isValid = false;
+            }
+            
+            if (!isValid) return;
+            
+            const user = users.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                currentUser = { name: user.name, email: user.email };
+                localStorage.setItem('levelUpLife_currentUser', JSON.stringify(currentUser));
+                hideModals();
+                updateUI();
+            } else {
+                showError('loginPasswordError', 'E-Mail oder Passwort ist falsch.');
+            }
+        }
+
+        function register() {
+            clearErrors();
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+            
+            let isValid = true;
+            
+            if (!name) {
+                showError('registerNameError', 'Bitte gib deinen Namen ein.');
+                isValid = false;
+            }
+            
+            if (!email) {
+                showError('registerEmailError', 'Bitte gib deine E-Mail-Adresse ein.');
+                isValid = false;
+            } else if (!/\S+@\S+\.\S+/.test(email)) {
+                showError('registerEmailError', 'Bitte gib eine gültige E-Mail-Adresse ein.');
+                isValid = false;
+            } else if (users.some(u => u.email === email)) {
+                showError('registerEmailError', 'Diese E-Mail-Adresse ist bereits registriert.');
+                isValid = false;
+            }
+            
+            if (!password) {
+                showError('registerPasswordError', 'Bitte wähle ein Passwort.');
+                isValid = false;
+            } else if (password.length < 6) {
+                showError('registerPasswordError', 'Das Passwort muss mindestens 6 Zeichen lang sein.');
+                isValid = false;
+            }
+            
+            if (password !== passwordConfirm) {
+                showError('registerPasswordConfirmError', 'Die Passwörter stimmen nicht überein.');
+                isValid = false;
+            }
+            
+            if (!isValid) return;
+            
+            // Neuen Benutzer erstellen
+            const newUser = { name, email, password };
+            users.push(newUser);
+            localStorage.setItem('levelUpLife_users', JSON.stringify(users));
+            
+            currentUser = { name, email };
+            localStorage.setItem('levelUpLife_currentUser', JSON.stringify(currentUser));
+            
+            hideModals();
+            updateUI();
+            
+            // Formular leeren
+            document.getElementById('registerName').value = '';
+            document.getElementById('registerEmail').value = '';
+            document.getElementById('registerPassword').value = '';
+            document.getElementById('registerPasswordConfirm').value = '';
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('levelUpLife_currentUser');
+            updateUI();
+        }
+
+        function showHome() { 
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('createPost').classList.remove('active');
+            renderPosts(); 
+        }
+        
         function showCreatePost() {
+            if (!currentUser) {
+                showLoginModal();
+                return;
+            }
+            
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
             document.getElementById('createPost').classList.add('active');
         }
+        
         function showTrending() {
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('createPost').classList.remove('active');
             const trendingPosts = [...posts].sort((a, b) => b.likes - a.likes);
             renderPosts(trendingPosts);
         }
 
         function createPost() {
+            if (!currentUser) {
+                showLoginModal();
+                return;
+            }
+            
             const title = document.getElementById('postTitle').value;
             const content = document.getElementById('postContent').value;
             const type = document.getElementById('postType').value;
 
-            if (!title || !content) { alert('Bitte fülle alle Felder aus!'); return; }
+            if (!title || !content) { 
+                alert('Bitte fülle alle Felder aus!'); 
+                return; 
+            }
 
             const newPost = {
-                id: nextPostId++, title, content, author: currentUser.name,
-                type, time: 'gerade eben', likes: 0, liked: false, comments: []
+                id: nextPostId++, 
+                title, 
+                content, 
+                author: currentUser.name,
+                type, 
+                time: new Date().toLocaleString('de-DE'), 
+                likes: 0, 
+                liked: false, 
+                comments: []
             };
+            
             posts.unshift(newPost);
+            localStorage.setItem('levelUpLife_posts', JSON.stringify(posts));
+            localStorage.setItem('levelUpLife_nextPostId', nextPostId.toString());
+            
             renderPosts();
             document.getElementById('postTitle').value = '';
             document.getElementById('postContent').value = '';
@@ -160,6 +451,17 @@
         function renderPosts(postsToRender = posts) {
             const container = document.getElementById('postsContainer');
             container.innerHTML = '';
+            
+            if (postsToRender.length === 0) {
+                container.innerHTML = `
+                    <div class="post">
+                        <h2 class="post-title">Noch keine Beiträge</h2>
+                        <p>Sei der Erste, der einen Beitrag erstellt!</p>
+                    </div>
+                `;
+                return;
+            }
+            
             postsToRender.forEach(post => {
                 const postElement = document.createElement('div');
                 postElement.className = 'post';
@@ -177,15 +479,90 @@
                 }
 
                 postElement.innerHTML = `
-                    <div class="post-header">
-                        <div class="post-author">${post.author}</div>
-                        <div class="post-time">${post.time}</div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <div style="font-weight: 600;">${post.author}</div>
+                        <div style="color: #8e8e93;">${post.time}</div>
                     </div>
                     <h2 class="post-title">${post.title}</h2>
                     ${contentHTML}
+                    <div style="margin-top: 15px; display: flex; gap: 15px;">
+                        <button onclick="likePost(${post.id})">${post.liked ? '❤️' : '🤍'} ${post.likes}</button>
+                        <button onclick="focusComment(${post.id})">💬 Kommentieren</button>
+                    </div>
+                    <div style="margin-top: 15px; display: none;" id="commentSection-${post.id}">
+                        <input type="text" id="commentInput-${post.id}" placeholder="Schreibe einen Kommentar..." style="width: 70%; padding: 8px; border-radius: 15px; border: 1px solid #ddd;">
+                        <button onclick="addComment(${post.id})" style="padding: 8px 15px; background: #007AFF; color: white; border: none; border-radius: 15px;">Senden</button>
+                    </div>
+                    <div id="comments-${post.id}" style="margin-top: 15px;">
+                        ${post.comments && post.comments.length > 0 ? 
+                            post.comments.map(comment => `
+                                <div style="background: #f0f0f0; padding: 10px; border-radius: 10px; margin-bottom: 10px;">
+                                    <div style="font-weight: 600;">${comment.author}</div>
+                                    <div>${comment.text}</div>
+                                </div>
+                            `).join('') : ''
+                        }
+                    </div>
                 `;
                 container.appendChild(postElement);
             });
+        }
+
+        function likePost(postId) {
+            if (!currentUser) {
+                showLoginModal();
+                return;
+            }
+            
+            const post = posts.find(p => p.id === postId);
+            if (post) {
+                if (post.liked) {
+                    post.likes--;
+                    post.liked = false;
+                } else {
+                    post.likes++;
+                    post.liked = true;
+                }
+                localStorage.setItem('levelUpLife_posts', JSON.stringify(posts));
+                renderPosts();
+            }
+        }
+
+        function focusComment(postId) {
+            if (!currentUser) {
+                showLoginModal();
+                return;
+            }
+            
+            const commentSection = document.getElementById(`commentSection-${postId}`);
+            commentSection.style.display = 'block';
+            document.getElementById(`commentInput-${postId}`).focus();
+        }
+
+        function addComment(postId) {
+            if (!currentUser) {
+                showLoginModal();
+                return;
+            }
+            
+            const commentInput = document.getElementById(`commentInput-${postId}`);
+            const commentText = commentInput.value.trim();
+            
+            if (!commentText) return;
+            
+            const post = posts.find(p => p.id === postId);
+            if (post) {
+                if (!post.comments) post.comments = [];
+                
+                post.comments.push({
+                    author: currentUser.name,
+                    text: commentText,
+                    time: new Date().toLocaleString('de-DE')
+                });
+                
+                localStorage.setItem('levelUpLife_posts', JSON.stringify(posts));
+                renderPosts();
+            }
         }
 
         function runCode(postId) {
@@ -209,8 +586,6 @@
             `);
             iframeDoc.close();
         }
-
-        renderPosts();
     </script>
 </body>
 </html>
