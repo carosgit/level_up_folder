@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html lang="de">    <!-- Version 2.0 -->
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LevelUp Life - Teile deine Gedanken</title>
+    <!-- Skulpt Bibliothek für Python-Ausführung -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/skulpt/1.2.0/skulpt.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/skulpt/1.2.0/skulpt-stdlib.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -72,11 +75,34 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
         }
         .post-title { font-size: 24px; font-weight: 700; margin-bottom: 15px; }
-        pre { background: #f4f4f4; padding: 10px; border-radius: 10px; overflow-x: auto; }
-        .console-log {
-            background:#111; color:#0f0; padding:10px; margin-top:10px; height:100px;
-            overflow:auto; font-family:monospace; border-radius:10px;
+        pre { 
+            background: #f4f4f4; 
+            padding: 15px; 
+            border-radius: 10px; 
+            overflow-x: auto; 
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            line-height: 1.5;
+            tab-size: 4;
+            margin: 15px 0;
         }
+        .code-block { position: relative; }
+        .copy-btn {
+            position: absolute; top: 10px; right: 10px;
+            background: rgba(0, 122, 255, 0.1); border: none; padding: 5px 10px; border-radius: 5px;
+            color: #007AFF; font-size: 12px; cursor: pointer;
+        }
+        .console-log {
+            background:#111; color:#0f0; padding:15px; margin-top:15px; min-height:100px;
+            overflow:auto; font-family:monospace; border-radius:10px; white-space: pre-wrap;
+        }
+        .post-actions {
+            display: flex; gap: 15px; margin-top: 20px;
+        }
+        .post-btn {
+            background: rgba(0, 122, 255, 0.1); border: none; padding: 8px 15px; border-radius: 15px;
+            color: #007AFF; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 5px;
+        }
+        .post-btn:hover { background: rgba(0, 122, 255, 0.2); }
         
         /* Modal Styles */
         .modal {
@@ -132,13 +158,41 @@
             margin-top: 5px;
             display: none;
         }
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            color: #8e8e93;
+            font-size: 14px;
+        }
+        .language-badge {
+            background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header class="header">
             <div class="logo">LevelUp Life</div>
-            <div class="logo-subtitle">✨ Verbessere dein Leben jeden Tag ✨</div>
+            <div class="logo-subtitle">✨ Teile deine Python-Programme ✨</div>
             <nav class="nav">
                 <button class="nav-btn active" onclick="showHome()">🏠 Home</button>
                 <button class="nav-btn" onclick="showCreatePost()">✍️ Schreiben</button>
@@ -158,9 +212,10 @@
             <h2 style="margin-bottom: 20px;">Neuen Beitrag erstellen</h2>
             <div class="form-group">
                 <label for="postType">Beitragstyp</label>
-                <select id="postType">
+                <select id="postType" onchange="toggleCodeInput()">
                     <option value="text">Text</option>
-                    <option value="code">JavaScript-Programm</option>
+                    <option value="python">Python-Code</option>
+                    <option value="javascript">JavaScript-Code</option>
                 </select>
             </div>
             <div class="form-group">
@@ -168,7 +223,7 @@
                 <input type="text" id="postTitle" placeholder="Gib deinem Beitrag einen Titel...">
             </div>
             <div class="form-group">
-                <label for="postContent">Inhalt</label>
+                <label for="postContent" id="postContentLabel">Inhalt</label>
                 <textarea id="postContent" placeholder="Was möchtest du teilen oder programmieren?"></textarea>
             </div>
             <button class="submit-btn" onclick="createPost()">Beitrag veröffentlichen</button>
@@ -241,11 +296,110 @@
         let currentUser = JSON.parse(localStorage.getItem('levelUpLife_currentUser')) || null;
         let nextPostId = parseInt(localStorage.getItem('levelUpLife_nextPostId')) || 1;
 
+        // Beispiel-Python-Code für die Demo
+        const examplePythonCode = `# Einfacher Python-Code
+def begruessung(name):
+    return f"Hallo {name}! Willkommen bei LevelUp Life."
+
+# Fibonacci-Folge
+def fibonacci(n):
+    a, b = 0, 1
+    for _ in range(n):
+        yield a
+        a, b = b, a + b
+
+# Beispielaufruf
+if __name__ == "__main__":
+    print(begruessung("Python-Entwickler"))
+    print("Fibonacci-Folge:", list(fibonacci(10)))`;
+
+        // Skulpt Konfiguration
+        function outf(text) {
+            // Globale Ausgabefunktion für Skulpt
+            if (window.currentSkulptOutput) {
+                window.currentSkulptOutput.innerHTML += text;
+            }
+        }
+
+        function builtinRead(x) {
+            // Eingebaute Lesefunktion für Skulpt
+            if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
+                throw "File not found: '" + x + "'";
+            return Sk.builtinFiles["files"][x];
+        }
+
         // Initialisierung beim Laden der Seite
         document.addEventListener('DOMContentLoaded', function() {
+            // Skulpt initialisieren
+            Sk.configure({
+                output: outf,
+                read: builtinRead,
+                __future__: Sk.python3
+            });
+
+            // Beispiel-Post hinzufügen, wenn keine Posts vorhanden sind
+            if (posts.length === 0) {
+                posts.push({
+                    id: nextPostId++,
+                    title: "Willkommen bei LevelUp Life!",
+                    content: "Dies ist eine Beispiel-Nachricht. Du kannst Textbeiträge erstellen oder Python-Code posten und ausführen!",
+                    author: "System",
+                    type: "text",
+                    time: new Date().toLocaleString('de-DE'),
+                    likes: 5,
+                    liked: false,
+                    comments: []
+                });
+                
+                posts.push({
+                    id: nextPostId++,
+                    title: "Python Fibonacci-Beispiel",
+                    content: examplePythonCode,
+                    author: "System",
+                    type: "python",
+                    time: new Date().toLocaleString('de-DE'),
+                    likes: 12,
+                    liked: false,
+                    comments: []
+                });
+                
+                localStorage.setItem('levelUpLife_posts', JSON.stringify(posts));
+                localStorage.setItem('levelUpLife_nextPostId', nextPostId.toString());
+            }
+            
             updateUI();
             renderPosts();
         });
+
+        function toggleCodeInput() {
+            const postType = document.getElementById('postType').value;
+            const contentLabel = document.getElementById('postContentLabel');
+            const contentInput = document.getElementById('postContent');
+            
+            if (postType === 'text') {
+                contentLabel.textContent = 'Inhalt';
+                contentInput.placeholder = 'Was möchtest du teilen?';
+            } else {
+                contentLabel.textContent = 'Code';
+                contentInput.placeholder = 'Füge hier deinen Code ein...';
+                
+                // Wenn das Textfeld leer ist, Beispielcode einfügen
+                if (!contentInput.value.trim()) {
+                    if (postType === 'python') {
+                        contentInput.value = examplePythonCode;
+                    } else if (postType === 'javascript') {
+                        contentInput.value = `// JavaScript Beispiel
+console.log("Hallo Welt!");
+
+function summe(a, b) {
+    return a + b;
+}
+
+console.log("Die Summe von 5 und 3 ist:", summe(5, 3));`;
+                    }
+                }
+            }
+        }
 
         function updateUI() {
             if (currentUser) {
@@ -467,27 +621,37 @@
                 postElement.className = 'post';
 
                 let contentHTML = '';
-                if (post.type === 'code') {
+                let languageBadge = '';
+                
+                if (post.type === 'python' || post.type === 'javascript') {
+                    languageBadge = `<span class="language-badge">${post.type === 'python' ? 'Python' : 'JavaScript'}</span>`;
+                    
                     contentHTML = `
-                        <pre><code>${post.content.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</code></pre>
-                        <button onclick="runCode(${post.id})">▶️ Ausführen</button>
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(${post.id})">Kopieren</button>
+                            <pre><code>${escapeHtml(post.content)}</code></pre>
+                        </div>
+                        <button class="post-btn" onclick="runCode(${post.id})"><span>▶️</span> Ausführen</button>
                         <div id="log-${post.id}" class="console-log"></div>
-                        <iframe sandbox="allow-scripts" id="output-${post.id}" style="display:none;"></iframe>
                     `;
                 } else {
                     contentHTML = `<p>${post.content}</p>`;
                 }
 
                 postElement.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                        <div style="font-weight: 600;">${post.author}</div>
-                        <div style="color: #8e8e93;">${post.time}</div>
+                    <div class="post-header">
+                        <div><strong>${post.author}</strong> • ${post.time}</div>
+                        ${languageBadge}
                     </div>
                     <h2 class="post-title">${post.title}</h2>
                     ${contentHTML}
-                    <div style="margin-top: 15px; display: flex; gap: 15px;">
-                        <button onclick="likePost(${post.id})">${post.liked ? '❤️' : '🤍'} ${post.likes}</button>
-                        <button onclick="focusComment(${post.id})">💬 Kommentieren</button>
+                    <div class="post-actions">
+                        <button class="post-btn" onclick="likePost(${post.id})">
+                            ${post.liked ? '❤️' : '🤍'} <span>${post.likes}</span>
+                        </button>
+                        <button class="post-btn" onclick="focusComment(${post.id})">
+                            💬 Kommentieren
+                        </button>
                     </div>
                     <div style="margin-top: 15px; display: none;" id="commentSection-${post.id}">
                         <input type="text" id="commentInput-${post.id}" placeholder="Schreibe einen Kommentar..." style="width: 70%; padding: 8px; border-radius: 15px; border: 1px solid #ddd;">
@@ -499,6 +663,7 @@
                                 <div style="background: #f0f0f0; padding: 10px; border-radius: 10px; margin-bottom: 10px;">
                                     <div style="font-weight: 600;">${comment.author}</div>
                                     <div>${comment.text}</div>
+                                    <div style="font-size: 12px; color: #8e8e93;">${comment.time}</div>
                                 </div>
                             `).join('') : ''
                         }
@@ -506,6 +671,74 @@
                 `;
                 container.appendChild(postElement);
             });
+        }
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function copyCode(postId) {
+            const post = posts.find(p => p.id === postId);
+            if (post) {
+                navigator.clipboard.writeText(post.content)
+                    .then(() => {
+                        alert('Code wurde in die Zwischenablage kopiert!');
+                    })
+                    .catch(err => {
+                        console.error('Fehler beim Kopieren: ', err);
+                    });
+            }
+        }
+
+        function runCode(postId) {
+            const post = posts.find(p => p.id === postId);
+            const logDiv = document.getElementById(`log-${postId}`);
+            logDiv.innerHTML = '';
+            
+            if (post.type === 'javascript') {
+                // JavaScript-Code ausführen
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+                
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                iframeDoc.open();
+                iframeDoc.write(`
+                    <script>
+                        const logDiv = parent.document.getElementById('log-${postId}');
+                        console.log = (...args) => { 
+                            logDiv.innerHTML += args.join(' ') + '\\n'; 
+                        };
+                        try {
+                            ${post.content}
+                        } catch(e) {
+                            logDiv.innerHTML += '❌ Fehler: ' + e.message + '\\n';
+                        }
+                    <\/script>
+                `);
+                iframeDoc.close();
+                
+                // Iframe nach 5 Sekunden entfernen
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                }, 5000);
+                
+            } else if (post.type === 'python') {
+                // Python-Code mit Skulpt ausführen
+                window.currentSkulptOutput = logDiv;
+                logDiv.innerHTML = '<div class="loading-spinner"></div> Code wird ausgeführt...';
+                
+                try {
+                    Sk.importMainWithBody("<stdin>", false, post.content);
+                } catch (e) {
+                    logDiv.innerHTML = '❌ Fehler: ' + e.toString();
+                }
+            }
         }
 
         function likePost(postId) {
@@ -563,28 +796,6 @@
                 localStorage.setItem('levelUpLife_posts', JSON.stringify(posts));
                 renderPosts();
             }
-        }
-
-        function runCode(postId) {
-            const post = posts.find(p => p.id === postId);
-            const iframe = document.getElementById(`output-${postId}`);
-            const logDiv = document.getElementById(`log-${postId}`);
-            logDiv.innerHTML = '';
-
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-            iframeDoc.open();
-            iframeDoc.write(`
-                <script>
-                    const logDiv = parent.document.getElementById('log-${postId}');
-                    console.log = (...args) => { logDiv.innerHTML += args.join(' ') + '<br>'; };
-                    try {
-                        ${post.content}
-                    } catch(e) {
-                        logDiv.innerHTML += '❌ Fehler: ' + e.message + '<br>';
-                    }
-                <\/script>
-            `);
-            iframeDoc.close();
         }
     </script>
 </body>
