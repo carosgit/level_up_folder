@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konsolen-Adventure: Die vergessene Festung</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #121212;
+            color: #00ff00;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        #game-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        #output {
+            background-color: #1e1e1e;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        #input {
+            background-color: #1e1e1e;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            padding: 10px;
+            width: calc(100% - 22px);
+            font-family: 'Courier New', monospace;
+        }
+        #input:focus {
+            outline: none;
+            box-shadow: 0 0 5px #00ff00;
+        }
+        #start-btn {
+            background-color: #1e1e1e;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+        }
+        #start-btn:hover {
+            background-color: #00ff00;
+            color: #1e1e1e;
+        }
+        .intro {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .command {
+            color: #ffff00;
+        }
+        .system {
+            color: #00ffff;
+        }
+        .item {
+            color: #ff9900;
+        }
+        .enemy {
+            color: #ff0000;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div class="intro">
+            <h1>Die vergessene Festung</h1>
+            <p>Ein Textadventure für die Konsole</p>
+        </div>
+        
+        <div id="output"></div>
+        
+        <input type="text" id="input" placeholder="Gib 'start' ein, um das Spiel zu beginnen..." disabled>
+        
+        <div style="text-align: center;">
+            <button id="start-btn">Spiel starten</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const output = document.getElementById('output');
+            const input = document.getElementById('input');
+            const startBtn = document.getElementById('start-btn');
+            
+            let gameStarted = false;
+            let player = {
+                health: 100,
+                items: [],
+                location: 'start'
+            };
+            
+            const locations = {
+                start: {
+                    description: "Du stehst vor dem Eingang einer alten, verlassenen Festung. Das Tor ist eingestürzt, aber daneben gibt es eine schmale Öffnung in der Mauer. Ein Weg führt nach Norden in den Wald.",
+                    exits: {north: "wald", enter: "hof"}
+                },
+                wald: {
+                    description: "Du bist in einem dichten Wald. Das Licht fällt nur spärlich durch das Blätterdach. Du hörst seltsame Geräusche aus dem Unterholz. Ein Weg führt nach Süden zurück zur Festung.",
+                    exits: {south: "start"},
+                    items: ["Stock"]
+                },
+                hof: {
+                    description: "Du bist im Innenhof der Festung. Überwucherte Steine und ein verrosteter Brunnen sind alles, was übrig geblieben ist. Türen führen nach Westen und Osten, und eine Treppe führt nach oben.",
+                    exits: {west: "westflügel", east: "ostflügel", up: "treppe", out: "start"},
+                    items: ["Schlüssel"]
+                },
+                westflügel: {
+                    description: "Dieser Flügel der Festung ist stark beschädigt. Eine Wand ist eingestürzt und gibt den Blick auf den Wald frei. An einer Wand hängt ein verblasstes Gemälde.",
+                    exits: {east: "hof"},
+                    items: ["Schwert"]
+                },
+                ostflügel: {
+                    description: "Der Ostflügel scheint besser erhalten zu sein. Hier stehen noch einige Möbelstücke - ein Tisch und zwei Stühle. Eine Truhe steht in der Ecke.",
+                    exits: {west: "hof"},
+                    requires: "Schlüssel",
+                    items: ["Trank"]
+                },
+                treppe: {
+                    description: "Die steile SteinTreppe führt zu einem Turmzimmer oben. Die Stufen sind abgenutzt und mit Moos bewachsen.",
+                    exits: {up: "turm", down: "hof"}
+                },
+                turm: {
+                    description: "Du bist im Turmzimmer angekommen. Von hier oben hast du eine gute Aussicht über die Umgebung. Auf einem Tisch liegt ein altes Buch.",
+                    exits: {down: "treppe"},
+                    items: ["Buch"]
+                }
+            };
+            
+            function addOutput(text, className = "") {
+                const p = document.createElement('p');
+                if (className) p.className = className;
+                p.textContent = text;
+                output.appendChild(p);
+                output.scrollTop = output.scrollHeight;
+            }
+            
+            function processCommand(cmd) {
+                if (!gameStarted) {
+                    if (cmd === 'start') {
+                        startGame();
+                    } else {
+                        addOutput("Gib 'start' ein, um das Spiel zu beginnen.");
+                    }
+                    return;
+                }
+                
+                const commands = cmd.toLowerCase().split(' ');
+                const action = commands[0];
+                
+                switch(action) {
+                    case 'help':
+                        addOutput("Verfügbare Befehle:", "system");
+                        addOutput("look - Schau dich um");
+                        addOutput("go [richtung] - Gehe in eine Richtung (nord, süd, ost, west, up, down, enter, out)");
+                        addOutput("take [gegenstand] - Nimm einen Gegenstand auf");
+                        addOutput("use [gegenstand] - Benutze einen Gegenstand");
+                        addOutput("inventory - Zeige dein Inventar an");
+                        addOutput("health - Zeige deine Gesundheit an");
+                        addOutput("quit - Beende das Spiel");
+                        break;
+                    
+                    case 'look':
+                        describeLocation();
+                        break;
+                    
+                    case 'go':
+                        if (commands.length < 2) {
+                            addOutput("Wohin möchtest du gehen?");
+                            return;
+                        }
+                        const direction = commands[1];
+                        move(direction);
+                        break;
+                    
+                    case 'take':
+                        if (commands.length < 2) {
+                            addOutput("Was möchtest du nehmen?");
+                            return;
+                        }
+                        const itemToTake = commands.slice(1).join(' ');
+                        takeItem(itemToTake);
+                        break;
+                    
+                    case 'use':
+                        if (commands.length < 2) {
+                            addOutput("Was möchtest du benutzen?");
+                            return;
+                        }
+                        const itemToUse = commands.slice(1).join(' ');
+                        useItem(itemToUse);
+                        break;
+                    
+                    case 'inventory':
+                    case 'i':
+                        showInventory();
+                        break;
+                    
+                    case 'health':
+                        addOutput(`Deine Gesundheit: ${player.health}`, "system");
+                        break;
+                    
+                    case 'quit':
+                        addOutput("Spiel beendet. Aktualisiere die Seite, um neu zu starten.", "system");
+                        gameStarted = false;
+                        input.disabled = true;
+                        break;
+                    
+                    default:
+                        addOutput("Das verstehe ich nicht. Tippe 'help' für eine Liste der Befehle.");
+                }
+            }
+            
+            function startGame() {
+                gameStarted = true;
+                input.disabled = false;
+                input.placeholder = "Gib einen Befehl ein (help für Hilfe)...";
+                startBtn.style.display = 'none';
+                
+                addOutput("Willkommen bei 'Die vergessene Festung'!", "system");
+                addOutput("Du stehst vor den Ruinen einer alten Festung. Legende besagt, dass hier einst ein mächtiger Schatz versteckt wurde.");
+                addOutput("Tippe 'help' für eine Liste der verfügbaren Befehle.");
+                addOutput("");
+                describeLocation();
+            }
+            
+            function describeLocation() {
+                const location = locations[player.location];
+                addOutput(location.description);
+                
+                // Zeige mögliche Wege an
+                const exits = Object.keys(location.exits);
+                addOutput(`Wege: ${exits.join(', ')}`, "system");
+                
+                // Zeige Items im Raum an, falls vorhanden
+                if (location.items && location.items.length > 0) {
+                    addOutput(`Du siehst: ${location.items.join(', ')}`, "item");
+                }
+            }
+            
+            function move(direction) {
+                const location = locations[player.location];
+                const possibleExits = location.exits;
+                
+                if (possibleExits[direction]) {
+                    const newLocation = possibleExits[direction];
+                    
+                    // Prüfe auf Zugangsbeschränkungen
+                    if (locations[newLocation].requires) {
+                        const requiredItem = locations[newLocation].requires;
+                        if (!player.items.includes(requiredItem)) {
+                            addOutput(`Du benötigst ${requiredItem}, um hier einzutreten.`, "system");
+                            return;
+                        }
+                    }
+                    
+                    player.location = newLocation;
+                    addOutput(`Du gehst ${direction}.`, "command");
+                    describeLocation();
+                } else {
+                    addOutput("Du kannst nicht in diese Richtung gehen.");
+                }
+            }
+            
+            function takeItem(itemName) {
+                const location = locations[player.location];
+                
+                if (location.items && location.items.includes(itemName)) {
+                    player.items.push(itemName);
+                    location.items = location.items.filter(item => item !== itemName);
+                    addOutput(`Du nimmst ${itemName}.`, "command");
+                } else {
+                    addOutput("Das ist hier nicht verfügbar.");
+                }
+            }
+            
+            function useItem(itemName) {
+                if (player.items.includes(itemName)) {
+                    if (itemName === "Trank") {
+                        player.health = Math.min(100, player.health + 30);
+                        player.items = player.items.filter(item => item !== itemName);
+                        addOutput(`Du trinkst den Trank. Deine Gesundheit erhöht sich auf ${player.health}.`, "system");
+                    } else if (itemName === "Buch") {
+                        addOutput("Du blätterst durch das Buch. Es enthält eine Karte der Festung mit einer markierten Stelle im Ostflügel.", "system");
+                    } else {
+                        addOutput(`Du benutzt ${itemName}, aber nichts passiert.`);
+                    }
+                } else {
+                    addOutput("Das hast du nicht im Inventar.");
+                }
+            }
+            
+            function showInventory() {
+                if (player.items.length === 0) {
+                    addOutput("Dein Inventar ist leer.", "system");
+                } else {
+                    addOutput(`Inventar: ${player.items.join(', ')}`, "system");
+                }
+            }
+            
+            // Event-Listener
+            startBtn.addEventListener('click', function() {
+                processCommand('start');
+            });
+            
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const command = input.value.trim();
+                    if (command) {
+                        addOutput(`> ${command}`, "command");
+                        processCommand(command);
+                        input.value = '';
+                    }
+                }
+            });
+            
+            // Initialer Hinweis
+            addOutput("Willkommen beim Konsolen-Adventure!", "system");
+            addOutput("Klicke auf 'Spiel starten' oder gib 'start' ein, um zu beginnen.");
+        });
+    </script>
+</body>
+</html>
