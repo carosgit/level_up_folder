@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>lvlup Life</title>
+
+    <!-- Charts & Wordcloud (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.0.6/wordcloud2.min.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .header-left { text-align: left; }
+        .header-right { display: flex; align-items: center; gap: 10px; }
+
+        .logo {
+            font-size: 2.5em; font-weight: bold;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .tagline { color: #666; font-size: 1.1em; }
+
+        .main-content { display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
+
+        .feed-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px; padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .post-form {
+            background: #f8f9fa; border-radius: 15px; padding: 20px;
+            margin-bottom: 20px; border: 2px solid #e9ecef;
+        }
+
+        .post-input {
+            width: 100%; min-height: 80px; border: none; background: white;
+            border-radius: 10px; padding: 15px; font-size: 16px; resize: vertical; margin-bottom: 10px;
+        }
+
+        .post-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2); color: white; border: none;
+            border-radius: 25px; padding: 12px 30px; font-size: 16px; font-weight: bold; cursor: pointer; transition: transform 0.2s;
+        }
+        .post-btn:hover { transform: translateY(-2px); }
+
+        .posts { display: flex; flex-direction: column; gap: 15px; }
+
+        .post {
+            background: white; border-radius: 15px; padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border-left: 4px solid transparent; transition: all 0.3s ease;
+        }
+        .post:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .post.positive { border-left-color: #28a745; }
+        .post.negative { border-left-color: #dc3545; }
+        .post.neutral { border-left-color: #6c757d; }
+
+        .post-header { display: flex; align-items: center; margin-bottom: 10px; }
+
+        .avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: bold; margin-right: 10px;
+        }
+
+        .post-info { flex: 1; }
+        .username { font-weight: bold; color: #333; }
+        .timestamp { color: #666; font-size: 0.9em; }
+
+        .sentiment-badge { padding: 4px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold; margin-left: auto; }
+        .sentiment-positive { background: #d4edda; color: #155724; }
+        .sentiment-negative { background: #f8d7da; color: #721c24; }
+        .sentiment-neutral { background: #d1ecf1; color: #0c5460; }
+
+        .post-content { font-size: 16px; line-height: 1.6; margin-bottom: 10px; }
+        .keyword-highlight {
+            background: linear-gradient(45deg, #667eea, #764ba2); color: white;
+            padding: 2px 6px; border-radius: 4px; font-weight: bold;
+        }
+
+        .sidebar { display: flex; flex-direction: column; gap: 20px; }
+
+        .stats-box {
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
+            border-radius: 20px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .stats-title {
+            font-size: 1.2em; font-weight: bold; margin-bottom: 15px; color: #333; display: flex; align-items: center;
+        }
+        .stats-icon { width: 20px; height: 20px; margin-right: 8px; background: linear-gradient(45deg, #667eea, #764ba2); border-radius: 50%; }
+
+        .stats-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .stats-item:last-child { border-bottom: none; }
+        .stats-count {
+            background: linear-gradient(45deg, #667eea, #764ba2); color: white;
+            padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 0.9em;
+        }
+
+        .trend-item { display: flex; align-items: center; padding: 8px 0; }
+        .trend-arrow { margin-right: 8px; font-size: 1.2em; }
+        .trend-up { color: #28a745; }
+        .trend-down { color: #dc3545; }
+
+        .loading {
+            display: inline-block; width: 20px; height: 20px;
+            border: 3px solid #f3f3f3; border-top: 3px solid #667eea;
+            border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0%{ transform: rotate(0deg);} 100%{ transform: rotate(360deg);} }
+
+        /* Account Styles */
+        .auth-overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0, 0, 0, 0.8); display:flex; justify-content:center; align-items:center;
+            z-index: 1000; backdrop-filter: blur(5px);
+        }
+        .auth-modal {
+            background: white; border-radius: 20px; padding: 40px; max-width: 400px; width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center;
+        }
+        .auth-title { font-size: 1.8em; font-weight: bold; color:#333; margin-bottom: 30px; }
+        .auth-form { display: flex; flex-direction: column; gap: 15px; }
+        .auth-input {
+            padding: 15px; border: 2px solid #e9ecef; border-radius: 10px; font-size: 16px; transition: border-color 0.3s;
+        }
+        .auth-input:focus { outline: none; border-color: #667eea; }
+        .auth-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2); color: white; border: none;
+            border-radius: 25px; padding: 15px; font-size: 16px; font-weight: bold; cursor: pointer; transition: transform 0.2s;
+        }
+        .auth-btn:hover { transform: translateY(-2px); }
+        .auth-switch { margin-top: 20px; color: #666; }
+        .auth-link { color: #667eea; cursor: pointer; text-decoration: underline; }
+        .auth-link:hover { color: #764ba2; }
+
+        .user-menu { position: relative; display: inline-block; }
+        .user-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: bold; cursor: pointer;
+        }
+        .user-dropdown {
+            position: absolute; top: 50px; right: 0; background: white; border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); min-width: 200px; padding: 10px 0; display: none;
+        }
+        .user-dropdown.show { display: block; }
+        .dropdown-item { padding: 10px 20px; cursor: pointer; transition: background-color 0.2s; }
+        .dropdown-item:hover { background: #f8f9fa; }
+
+        .header-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2); color: white;
+            border: none; border-radius: 20px; padding: 10px 20px; font-size: 14px; font-weight: bold; cursor: pointer; transition: transform 0.2s;
+        }
+        .header-btn:hover { transform: translateY(-1px); }
+        .header-btn.secondary { background: white; color: #667eea; border: 2px solid #667eea; }
+
+        .hidden { display: none !important; }
+
+        /* Wordcloud Box: fixe Höhe für gute Darstellung */
+        #wordCloud {
+            width: 100%;
+            height: 220px;           /* gern anpassen */
+            position: relative;      /* für Canvas */
+        }
+
+        /* Charts: responsive Container */
+        .chart-wrap {
+            width: 100%;
+            height: 220px;           /* gleichmäßig zur Wordcloud */
+            position: relative;
+        }
+
+        @media (max-width: 768px) {
+            .main-content { grid-template-columns: 1fr; }
+            .sidebar { order: -1; }
+            #wordCloud, .chart-wrap { height: 260px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">lvlup Life</div>
+            <div class="tagline">Level up your life, one post at a time! 🚀</div>
+        </div>
+        <div class="header-right">
+            <div id="guestButtons" class="header-buttons">
+                <button id="loginBtn" class="header-btn secondary">Anmelden</button>
+                <button id="registerBtn" class="header-btn">Registrieren</button>
+            </div>
+            <div id="userMenu" class="user-menu hidden">
+                <div class="user-avatar" id="userAvatar"></div>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="dropdown-item" id="profileBtn">👤 Mein Profil</div>
+                    <div class="dropdown-item" id="settingsBtn">⚙️ Einstellungen</div>
+                    <div class="dropdown-item" id="logoutBtn">🚪 Abmelden</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="feed-section">
+            <div class="post-form">
+                <textarea id="postInput" class="post-input" placeholder="Was bewegt dich heute? Teile deine Gedanken zu Fitness, Motivation, Routine..."></textarea>
+                <button id="postBtn" class="post-btn">Posten</button>
+            </div>
+            <div id="posts" class="posts">
+                <!-- Posts werden hier dynamisch eingefügt -->
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="stats-box">
+                <div class="stats-title"><div class="stats-icon"></div>Top Themen heute</div>
+                <div id="topWords"><div class="loading"></div></div>
+            </div>
+
+            <div class="stats-box">
+                <div class="stats-title"><div class="stats-icon"></div>Stimmung der Community</div>
+                <div id="sentimentStats">
+                    <div class="stats-item"><span>😊 Positiv</span><span id="positiveCount" class="stats-count">0</span></div>
+                    <div class="stats-item"><span>😐 Neutral</span><span id="neutralCount" class="stats-count">0</span></div>
+                    <div class="stats-item"><span>😔 Negativ</span><span id="negativeCount" class="stats-count">0</span></div>
+                </div>
+            </div>
+
+            <div class="stats-box">
+                <div class="stats-title"><div class="stats-icon"></div>Aktuelle Trends</div>
+                <div id="trends"><div class="loading"></div></div>
+            </div>
+
+            <!-- NEU: Wortwolke -->
+            <div class="stats-box">
+                <div class="stats-title"><div class="stats-icon"></div>Wortwolke der Community</div>
+                <div id="wordCloud"></div>
+            </div>
+
+            <!-- NEU: Aktivität nach Tageszeit -->
+            <div class="stats-box">
+                <div class="stats-title"><div class="stats-icon"></div>Aktivität nach Tageszeit</div>
+                <div class="chart-wrap"><canvas id="activityChart"></canvas></div>
+            </div>
+
+            <!-- NEU: Sentiment-Verlauf -->
+            <div class="stats-box">
+                <div class="stats-title"><div class="stats-icon"></div>Sentiment-Verlauf</div>
+                <div class="chart-wrap"><canvas id="sentimentChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Authentication Modal -->
+<div id="authOverlay" class="auth-overlay hidden">
+    <div class="auth-modal">
+        <div id="authTitle" class="auth-title">Anmelden</div>
+        <form id="authForm" class="auth-form">
+            <input type="text" id="usernameInput" class="auth-input" placeholder="Benutzername" required>
+            <input type="email" id="emailInput" class="auth-input" placeholder="E-Mail" style="display: none;">
+            <input type="password" id="passwordInput" class="auth-input" placeholder="Passwort" required>
+            <input type="password" id="confirmPasswordInput" class="auth-input" placeholder="Passwort wiederholen" style="display: none;">
+            <button type="submit" id="authSubmitBtn" class="auth-btn">Anmelden</button>
+        </form>
+        <div class="auth-switch">
+            <span id="authSwitchText">Noch kein Account?</span>
+            <span id="authSwitchLink" class="auth-link">Jetzt registrieren</span>
+        </div>
+        <div class="auth-switch">
+            <span class="auth-link" id="authCloseBtn">Schließen</span>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ===================== Globale Variablen ===================== */
+let posts = [];
+let wordFrequency = {};
+let currentUser = null;
+let users = {}; // Simulierte Benutzer-Datenbank
+let isLoginMode = true;
+
+/* Charts (global für Update) */
+let activityChartInstance = null;
+let sentimentChartInstance = null;
+
+/* ===================== Sentiment: simple Wörterlisten ===================== */
+const positiveWords = ['gut','toll','super','großartig','fantastisch','perfekt','wunderbar','ausgezeichnet','motivation','motiviert','glücklich','freude','erfolg','erfolgreich','positiv','stark','energie','begeistert','stolz','zufrieden','liebe','dankbar','optimistisch','hoffnung','lachen','lächeln','gewinnen','sieg','champion','top','best','amazing','awesome','love','happy','great','excellent','wonderful','💪','🚀','😊','❤️','🎉','✨','🌟'];
+const negativeWords = ['schlecht','schrecklich','furchtbar','traurig','deprimiert','müde','erschöpft','stress','gestresst','probleme','schwierig','hart','anstrengend','negativ','sorgen','angst','ängstlich','verzweifelt','hoffnungslos','verloren','enttäuscht','frustriert','wütend','ärger','hass','schmerz','krank','krise','versagen','fehler','bad','terrible','sad','hate','angry','pain','😢','😔','😞','😟','😰','😭'];
+
+function analyzeSentiment(text) {
+    const words = text.toLowerCase().split(/\s+/);
+    let score = 0;
+    words.forEach(word => {
+        if (positiveWords.some(pw => word.includes(pw) || pw.includes(word))) score += 1;
+        if (negativeWords.some(nw => word.includes(nw) || nw.includes(word))) score -= 1;
+    });
+    return { score };
+}
+
+/* ===================== Keywords zum Hervorheben ===================== */
+const keywords = ['motivation','fitness','routine','meditation','gesundheit','sport','erfolg','ziel','disziplin','training','mindset','lifestyle','wellness','balance','produktivität'];
+
+function highlightKeywords(content) {
+    let highlightedContent = content;
+    keywords.forEach(keyword => {
+        const regex = new RegExp(`\\b(${keyword})\\b`, 'gi');
+        highlightedContent = highlightedContent.replace(regex, '<span class="keyword-highlight">$1</span>');
+    });
+    return highlightedContent;
+}
+
+/* ===================== Demo-Posts ===================== */
+const samplePosts = [
+    { username: "FitnessGuru23", content: "Heute war mein bestes Training bisher! Die Motivation ist auf einem neuen Level. 💪", timestamp: new Date(Date.now() - 300000) },
+    { username: "MindfulMarie", content: "Meditation am Morgen bringt mir so viel Ruhe für den Tag. Routine ist wirklich wichtig!", timestamp: new Date(Date.now() - 600000) },
+    { username: "HealthyHans", content: "Manchmal ist es schwer, die Balance zwischen Arbeit und Fitness zu finden...", timestamp: new Date(Date.now() - 900000) },
+    { username: "MotivationMax", content: "Jeder Tag ist eine neue Chance, besser zu werden! Meine Routine hilft mir dabei 🚀", timestamp: new Date(Date.now() - 1200000) },
+    { username: "WellnessWanda", content: "Gesundheit ist das wichtigste. Sport und gesunde Ernährung sind mein neues Lifestyle-Ziel!", timestamp: new Date(Date.now() - 1500000) }
+];
+
+/* ===================== Initialisierung ===================== */
+document.addEventListener('DOMContentLoaded', function() {
+    // Demo-User
+    users = {
+        'demo':  { username: 'demo',  email: 'demo@lvluplife.com',  password: 'demo123'  },
+        'admin': { username: 'admin', email: 'admin@lvluplife.com', password: 'admin123' }
+    };
+
+    // Demo-Posts laden
+    samplePosts.forEach(post => addPost(post.username, post.content, post.timestamp));
+
+    // Events
+    document.getElementById('postBtn').addEventListener('click', handleNewPost);
+    document.getElementById('postInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && e.ctrlKey) handleNewPost();
+    });
+
+    setupAuthEventListeners();
+
+    // Initiale Auswertungen
+    updateAnalytics();
+    updateUIForUser();
+});
+
+/* ===================== Post-Logik ===================== */
+function handleNewPost() {
+    const input = document.getElementById('postInput');
+    const content = input.value.trim();
+
+    if (!currentUser) {
+        alert('Bitte logge dich ein, um zu posten!');
+        showAuthModal(true);
+        return;
+    }
+
+    if (content) {
+        addPost(currentUser.username, content);
+        input.value = '';
+        updateAnalytics();
+    }
+}
+
+function addPost(username, content, timestamp = new Date()) {
+    const post = {
+        id: Date.now() + Math.random(),
+        username,
+        content,
+        timestamp
+    };
+    posts.unshift(post);
+    renderPost(post);
+    updateWordFrequency(content);
+}
+
+function renderPost(post) {
+    const postsContainer = document.getElementById('posts');
+    const postElement = document.createElement('div');
+
+    // Sentiment
+    const sentimentResult = analyzeSentiment(post.content);
+    let sentimentClass, sentimentLabel, sentimentBadge;
+    if (sentimentResult.score > 0) {
+        sentimentClass = 'positive'; sentimentLabel = 'Positiv'; sentimentBadge = 'sentiment-positive';
+    } else if (sentimentResult.score < 0) {
+        sentimentClass = 'negative'; sentimentLabel = 'Negativ'; sentimentBadge = 'sentiment-negative';
+    } else {
+        sentimentClass = 'neutral'; sentimentLabel = 'Neutral'; sentimentBadge = 'sentiment-neutral';
+    }
+
+    const highlightedContent = highlightKeywords(post.content);
+
+    postElement.className = `post ${sentimentClass}`;
+    postElement.innerHTML = `
+        <div class="post-header">
+            <div class="avatar">${post.username.charAt(0).toUpperCase()}</div>
+            <div class="post-info">
+                <div class="username">${post.username}</div>
+                <div class="timestamp">${formatTimestamp(post.timestamp)}</div>
+            </div>
+            <div class="sentiment-badge ${sentimentBadge}">${sentimentLabel}</div>
+        </div>
+        <div class="post-content">${highlightedContent}</div>
+    `;
+    postsContainer.insertBefore(postElement, postsContainer.firstChild);
+}
+
+function updateWordFrequency(content) {
+    const stopwords = ['der','die','das','und','ist','ich','mit','auf','für','eine','ein','von','zu','den','sich','nicht','war','sind','haben','wird','kann','auch','noch','wie','nur','aber','oder','wenn','dann','hier','dort','schon','heute','morgen','gestern'];
+    const words = content.toLowerCase()
+        .replace(/[^\wäöüß\s]/g, '')
+        .split(/\s+/)
+        .filter(word => word.length > 2 && !stopwords.includes(word));
+    words.forEach(word => { wordFrequency[word] = (wordFrequency[word] || 0) + 1; });
+}
+
+/* ===================== Analytics (bestehend) ===================== */
+function updateAnalytics() {
+    updateTopWords();
+    updateSentimentStats();
+    updateTrends();
+
+    // NEU:
+    renderWordCloud();
+    renderActivityByHourChart();
+    renderSentimentTrendChart();
+}
+
+function updateTopWords() {
+    const topWords = Object.entries(wordFrequency)
+        .sort(([,a],[,b]) => b - a)
+        .slice(0, 5);
+
+    const topWordsContainer = document.getElementById('topWords');
+    topWordsContainer.innerHTML = '';
+
+    topWords.forEach(([word, count]) => {
+        const item = document.createElement('div');
+        item.className = 'stats-item';
+        item.innerHTML = `
+            <span style="text-transform: capitalize;">${word}</span>
+            <span class="stats-count">${count}</span>
+        `;
+        topWordsContainer.appendChild(item);
+    });
+
+    if (topWords.length === 0) {
+        topWordsContainer.innerHTML = '<div style="text-align:center;color:#666;">Noch keine Daten verfügbar</div>';
+    }
+}
+
+function updateSentimentStats() {
+    let positive = 0, negative = 0, neutral = 0;
+    posts.forEach(post => {
+        const s = analyzeSentiment(post.content).score;
+        if (s > 0) positive++; else if (s < 0) negative++; else neutral++;
+    });
+    document.getElementById('positiveCount').textContent = positive;
+    document.getElementById('neutralCount').textContent = neutral;
+    document.getElementById('negativeCount').textContent = negative;
+}
+
+function updateTrends() {
+    const trendsContainer = document.getElementById('trends');
+    const recentPosts = posts.slice(0, 10);
+
+    if (recentPosts.length < 5) {
+        trendsContainer.innerHTML = '<div style="text-align:center;color:#666;">Mehr Posts für Trend-Analyse benötigt</div>';
+        return;
+    }
+
+    const recentWords = {};
+    recentPosts.forEach(post => {
+        const words = post.content.toLowerCase()
+            .replace(/[^\wäöüß\s]/g, '')
+            .split(/\s+/)
+            .filter(word => keywords.includes(word));
+        words.forEach(word => { recentWords[word] = (recentWords[word] || 0) + 1; });
+    });
+
+    const trendingWords = Object.entries(recentWords)
+        .sort(([,a],[,b]) => b - a)
+        .slice(0, 3);
+
+    trendsContainer.innerHTML = '';
+    if (trendingWords.length === 0) {
+        trendsContainer.innerHTML = '<div style="text-align:center;color:#666;">Keine aktuellen Trends</div>';
+        return;
+    }
+
+    trendingWords.forEach(([word, count]) => {
+        const item = document.createElement('div');
+        item.className = 'trend-item';
+        item.innerHTML = `
+            <span class="trend-arrow trend-up">📈</span>
+            <span style="flex:1;text-transform:capitalize;">${word}</span>
+            <span class="stats-count">${count}</span>
+        `;
+        trendsContainer.appendChild(item);
+    });
+}
+
+/* ===================== NEU: Wortwolke ===================== */
+function renderWordCloud() {
+    const container = document.getElementById('wordCloud');
+    if (!container) return;
+
+    // Clear previous canvas (WordCloud2 zeichnet in ein Canvas im Container)
+    container.innerHTML = '';
+
+    const list = Object.entries(wordFrequency)
+        .sort(([,a],[,b]) => b - a)
+        .slice(0, 80) // Top-N Wörter
+        .map(([w,c]) => [w, c]);
+
+    if (list.length === 0) {
+        container.innerHTML = '<div style="text-align:center;color:#666;">Noch keine Daten für die Wortwolke</div>';
+        return;
+    }
+
+    WordCloud(container, {
+        list,
+        gridSize: Math.round(16 * (container.offsetWidth / 300)),
+        weightFactor: function (size) { return Math.max(10, size * 6); },
+        rotateRatio: 0.1,
+        rotationSteps: 2,
+        backgroundColor: 'rgba(0,0,0,0)',
+        drawOutOfBound: false,
+        shrinkToFit: true
+    });
+}
+
+/* ===================== NEU: Aktivität nach Tageszeit (Chart.js) ===================== */
+function computeActivityByHour() {
+    const hours = Array.from({length:24}, (_,i)=>i);
+    const counts = new Array(24).fill(0);
+    posts.forEach(p => {
+        const h = new Date(p.timestamp).getHours();
+        counts[h] += 1;
+    });
+    return { labels: hours.map(h => `${String(h).padStart(2,'0')}:00`), counts };
+}
+
+function renderActivityByHourChart() {
+    const ctx = document.getElementById('activityChart');
+    if (!ctx) return;
+
+    const { labels, counts } = computeActivityByHour();
+
+    if (!activityChartInstance) {
+        activityChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: { labels, datasets: [{ label: 'Posts pro Stunde', data: counts }] },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { precision:0 } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+    } else {
+        activityChartInstance.data.labels = labels;
+        activityChartInstance.data.datasets[0].data = counts;
+        activityChartInstance.update();
+    }
+}
+
+/* ===================== NEU: Sentiment-Verlauf (moving average) ===================== */
+function computeSentimentSeries(windowSize = 5, maxPoints = 60) {
+    // älteste -> neueste
+    const ordered = posts.slice().reverse().slice(-maxPoints);
+    const scores = ordered.map(p => analyzeSentiment(p.content).score);
+
+    // gleitender Durchschnitt
+    const ma = [];
+    for (let i = 0; i < scores.length; i++) {
+        const start = Math.max(0, i - windowSize + 1);
+        const slice = scores.slice(start, i + 1);
+        const avg = slice.reduce((a,b)=>a+b,0) / slice.length;
+        ma.push(+avg.toFixed(2));
+    }
+
+    // Labels (z. B. relative Indizes)
+    const labels = ordered.map((p,i) => `#${i+1}`);
+    return { labels, series: ma };
+}
+
+function renderSentimentTrendChart() {
+    const ctx = document.getElementById('sentimentChart');
+    if (!ctx) return;
+
+    const { labels, series } = computeSentimentSeries(5, 60);
+
+    if (!sentimentChartInstance) {
+        sentimentChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Ø Sentiment (Gleitend, w=5)',
+                    data: series,
+                    tension: 0.25,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, suggestedMin: -3, suggestedMax: 3 }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    } else {
+        sentimentChartInstance.data.labels = labels;
+        sentimentChartInstance.data.datasets[0].data = series;
+        sentimentChartInstance.update();
+    }
+}
+
+/* ===================== Utilities ===================== */
+function formatTimestamp(timestamp) {
+    const now = new Date();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+
+    if (minutes < 1) return 'Gerade eben';
+    if (minutes < 60) return `vor ${minutes}m`;
+    if (hours < 24) return `vor ${hours}h`;
+    return new Date(timestamp).toLocaleDateString('de-DE');
+}
+
+/* ===================== Auth ===================== */
+function setupAuthEventListeners() {
+    document.getElementById('loginBtn').addEventListener('click', () => showAuthModal(true));
+    document.getElementById('registerBtn').addEventListener('click', () => showAuthModal(false));
+    document.getElementById('authCloseBtn').addEventListener('click', hideAuthModal);
+    document.getElementById('authSwitchLink').addEventListener('click', toggleAuthMode);
+    document.getElementById('authForm').addEventListener('submit', handleAuthSubmit);
+    document.getElementById('userAvatar').addEventListener('click', toggleUserMenu);
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+
+    document.getElementById('authOverlay').addEventListener('click', function(e) {
+        if (e.target === this) hideAuthModal();
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!document.getElementById('userMenu').contains(e.target)) {
+            document.getElementById('userDropdown').classList.remove('show');
+        }
+    });
+}
+
+function showAuthModal(loginMode) {
+    isLoginMode = loginMode;
+    updateAuthModal();
+    document.getElementById('authOverlay').classList.remove('hidden');
+}
+
+function hideAuthModal() {
+    document.getElementById('authOverlay').classList.add('hidden');
+    document.getElementById('authForm').reset();
+}
+
+function toggleAuthMode() {
+    isLoginMode = !isLoginMode;
+    updateAuthModal();
+}
+
+function updateAuthModal() {
+    const title = document.getElementById('authTitle');
+    const emailInput = document.getElementById('emailInput');
+    const confirmPasswordInput = document.getElementById('confirmPasswordInput');
+    const submitBtn = document.getElementById('authSubmitBtn');
+    const switchText = document.getElementById('authSwitchText');
+    const switchLink = document.getElementById('authSwitchLink');
+
+    if (isLoginMode) {
+        title.textContent = 'Anmelden';
+        emailInput.style.display = 'none';
+        confirmPasswordInput.style.display = 'none';
+        submitBtn.textContent = 'Anmelden';
+        switchText.textContent = 'Noch kein Account?';
+        switchLink.textContent = 'Jetzt registrieren';
+    } else {
+        title.textContent = 'Registrieren';
+        emailInput.style.display = 'block';
+        confirmPasswordInput.style.display = 'block';
+        submitBtn.textContent = 'Account erstellen';
+        switchText.textContent = 'Bereits registriert?';
+        switchLink.textContent = 'Jetzt anmelden';
+    }
+}
+
+function handleAuthSubmit(e) {
+    e.preventDefault();
+    const username = document.getElementById('usernameInput').value.trim();
+    const email = document.getElementById('emailInput').value.trim();
+    const password = document.getElementById('passwordInput').value;
+    const confirmPassword = document.getElementById('confirmPasswordInput').value;
+
+    if (isLoginMode) {
+        if (users[username] && users[username].password === password) {
+            currentUser = users[username];
+            hideAuthModal();
+            updateUIForUser();
+            showNotification('Erfolgreich angemeldet!', 'success');
+        } else {
+            showNotification('Falscher Benutzername oder Passwort!', 'error');
+        }
+    } else {
+        if (users[username]) { showNotification('Benutzername bereits vergeben!', 'error'); return; }
+        if (password !== confirmPassword) { showNotification('Passwörter stimmen nicht überein!', 'error'); return; }
+        if (password.length < 6) { showNotification('Passwort muss mindestens 6 Zeichen haben!', 'error'); return; }
+
+        users[username] = { username, email, password };
+        currentUser = users[username];
+        hideAuthModal();
+        updateUIForUser();
+        showNotification('Account erfolgreich erstellt!', 'success');
+    }
+}
+
+function logout() {
+    currentUser = null;
+    updateUIForUser();
+    showNotification('Erfolgreich abgemeldet!', 'success');
+    document.getElementById('userDropdown').classList.remove('show');
+}
+
+function toggleUserMenu() {
+    document.getElementById('userDropdown').classList.toggle('show');
+}
+
+function updateUIForUser() {
+    const guestButtons = document.getElementById('guestButtons');
+    const userMenu = document.getElementById('userMenu');
+    const userAvatar = document.getElementById('userAvatar');
+    const postInput = document.getElementById('postInput');
+
+    if (currentUser) {
+        guestButtons.classList.add('hidden');
+        userMenu.classList.remove('hidden');
+        userAvatar.textContent = currentUser.username.charAt(0).toUpperCase();
+        postInput.placeholder = `Was denkst du, ${currentUser.username}? Teile deine Gedanken...`;
+    } else {
+        guestButtons.classList.remove('hidden');
+        userMenu.classList.add('hidden');
+        postInput.placeholder = 'Melde dich an, um zu posten...';
+    }
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed; top: 20px; right: 20px; padding: 15px 20px; border-radius: 10px;
+        color: white; font-weight: bold; z-index: 9999; animation: slideIn 0.3s ease;
+        background: ${type === 'success' ? '#28a745' : '#dc3545'};
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to   { transform: translateX(0); opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
+
+    setTimeout(() => { notification.remove(); style.remove(); }, 3000);
+}
+</script>
+</body>
+</html>
