@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>lvlup Life</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            text-align: left;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo {
+            font-size: 2.5em;
+            font-weight: bold;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .tagline {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+
+        .feed-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .post-form {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #e9ecef;
+        }
+
+        .post-type-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .post-type-btn {
+            padding: 8px 16px;
+            border: 2px solid #e9ecef;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .post-type-btn.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .post-type-btn:hover {
+            border-color: #667eea;
+        }
+
+        .post-input {
+            width: 100%;
+            min-height: 80px;
+            border: none;
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 16px;
+            resize: vertical;
+            margin-bottom: 10px;
+            font-family: inherit;
+        }
+
+        .code-input {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            background: #2d3748;
+            color: #e2e8f0;
+            min-height: 120px;
+        }
+
+        .code-input::placeholder {
+            color: #a0aec0;
+        }
+
+        .post-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .post-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .posts {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .post {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border-left: 4px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .post:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .post.positive {
+            border-left-color: #28a745;
+        }
+
+        .post.negative {
+            border-left-color: #dc3545;
+        }
+
+        .post.neutral {
+            border-left-color: #6c757d;
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .post-info {
+            flex: 1;
+        }
+
+        .username {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .sentiment-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-left: auto;
+        }
+
+        .sentiment-positive {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .sentiment-negative {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .sentiment-neutral {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .post-content {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .code-post {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+
+        .expand-btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 4px 12px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .expand-btn:hover {
+            background: #3182ce;
+            transform: translateY(-1px);
+        }
+
+        .code-stats {
+            color: #a0aec0;
+            font-size: 11px;
+            margin-bottom: 5px;
+            font-style: italic;
+        }
+
+        .code-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .code-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+
+        .run-btn {
+            background: #48bb78;
+            color: white;
+        }
+
+        .run-btn:hover {
+            background: #38a169;
+            transform: translateY(-1px);
+        }
+
+        .copy-btn {
+            background: #4299e1;
+            color: white;
+        }
+
+        .copy-btn:hover {
+            background: #3182ce;
+            transform: translateY(-1px);
+        }
+
+        .code-output {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 12px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+            border-left: 3px solid #4299e1;
+        }
+
+        .code-error {
+            border-left-color: #f56565;
+            color: #fed7d7;
+        }
+
+        .post-type-text {
+            background: none;
+        }
+
+        .post-type-code {
+            background: linear-gradient(45deg, #2d3748, #4a5568);
+        }
+
+        .keyword-highlight {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .stats-box {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .stats-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+            display: flex;
+            align-items: center;
+        }
+
+        .stats-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 50%;
+        }
+
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stats-item:last-child {
+            border-bottom: none;
+        }
+
+        .stats-count {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .trend-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .trend-arrow {
+            margin-right: 8px;
+            font-size: 1.2em;
+        }
+
+        .trend-up {
+            color: #28a745;
+        }
+
+        .trend-down {
+            color: #dc3545;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                order: -1;
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Account System Styles */
+        .auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .auth-modal {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .auth-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .auth-input {
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .auth-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .auth-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .auth-switch {
+            margin-top: 20px;
+            color: #666;
+        }
+
+        .auth-link {
+            color: #667eea;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .auth-link:hover {
+            color: #764ba2;
+        }
+
+        .user-menu {
+            position: relative;
+            display: inline-block;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            min-width: 200px;
+            padding: 10px 0;
+            display: none;
+        }
+
+        .user-dropdown.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: #f8f9fa;
+        }
+
+        .header-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .header-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .header-btn.secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <div class="logo">lvlup Life</div>
+                <div class="tagline">Level up your life, one post at a time! 🚀</div>
+            </div>
+            <div class="header-right">
+                <div id="guestButtons" class="header-buttons">
+                    <button id="loginBtn" class="header-btn secondary">Anmelden</button>
+                    <button id="registerBtn" class="header-btn">Registrieren</button>
+                </div>
+                <div id="userMenu" class="user-menu hidden">
+                    <div class="user-avatar" id="userAvatar"></div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <div class="dropdown-item" id="profileBtn">
+                            👤 Mein Profil
+                        </div>
+                        <div class="dropdown-item" id="settingsBtn">
+                            ⚙️ Einstellungen
+                        </div>
+                        <div class="dropdown-item" id="logoutBtn">
+                            🚪 Abmelden
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="feed-section">
+                <div class="post-form">
+                    <div class="post-type-selector">
+                        <button id="textPostBtn" class="post-type-btn active" data-type="text">📝 Text</button>
+                        <button id="codePostBtn" class="post-type-btn" data-type="code">💻 Code</button>
+                    </div>
+                    <textarea id="postInput" class="post-input" placeholder="Was bewegt dich heute? Teile deine Gedanken zu Fitness, Motivation, Routine..."></textarea>
+                    <button id="postBtn" class="post-btn">Posten</button>
+                </div>
+                <div id="posts" class="posts">
+                    <!-- Posts werden hier dynamisch eingefügt -->
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="stats-box">
+                    <div class="stats-title">
+                        <div class="stats-icon"></div>
+                        Top Themen heute
+                    </div>
+                    <div id="topWords">
+                        <div class="loading"></div>
+                    </div>
+                </div>
+
+                <div class="stats-box">
+                    <div class="stats-title">
+                        <div class="stats-icon"></div>
+                        Stimmung der Community
+                    </div>
+                    <div id="sentimentStats">
+                        <div class="stats-item">
+                            <span>😊 Positiv</span>
+                            <span id="positiveCount" class="stats-count">0</span>
+                        </div>
+                        <div class="stats-item">
+                            <span>😐 Neutral</span>
+                            <span id="neutralCount" class="stats-count">0</span>
+                        </div>
+                        <div class="stats-item">
+                            <span>😔 Negativ</span>
+                            <span id="negativeCount" class="stats-count">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-box">
+                    <div class="stats-title">
+                        <div class="stats-icon"></div>
+                        Aktuelle Trends
+                    </div>
+                    <div id="trends">
+                        <div class="loading"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Authentication Modal -->
+    <div id="authOverlay" class="auth-overlay hidden">
+        <div class="auth-modal">
+            <div id="authTitle" class="auth-title">Anmelden</div>
+            <form id="authForm" class="auth-form">
+                <input type="text" id="usernameInput" class="auth-input" placeholder="Benutzername" required>
+                <input type="email" id="emailInput" class="auth-input" placeholder="E-Mail" style="display: none;">
+                <input type="password" id="passwordInput" class="auth-input" placeholder="Passwort" required>
+                <input type="password" id="confirmPasswordInput" class="auth-input" placeholder="Passwort wiederholen" style="display: none;">
+                <button type="submit" id="authSubmitBtn" class="auth-btn">Anmelden</button>
+            </form>
+            <div class="auth-switch">
+                <span id="authSwitchText">Noch kein Account?</span>
+                <span id="authSwitchLink" class="auth-link">Jetzt registrieren</span>
+            </div>
+            <div class="auth-switch">
+                <span class="auth-link" id="authCloseBtn">Schließen</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Globale Variablen
+        let posts = [];
+        let wordFrequency = {};
+        let currentUser = null;
+        let users = {}; // Simulierte Benutzer-Datenbank
+        let isLoginMode = true;
+        let currentPostType = 'text';
+        
+
+        
+        // Einfache Sentiment-Analyse ohne externe Bibliothek
+        const positiveWords = ['gut', 'toll', 'super', 'großartig', 'fantastisch', 'perfekt', 'wunderbar', 'ausgezeichnet', 'motivation', 'motiviert', 'glücklich', 'freude', 'erfolg', 'erfolgreich', 'positiv', 'stark', 'energie', 'begeistert', 'stolz', 'zufrieden', 'liebe', 'dankbar', 'optimistisch', 'hoffnung', 'lachen', 'lächeln', 'gewinnen', 'sieg', 'champion', 'top', 'best', 'amazing', 'awesome', 'love', 'happy', 'great', 'excellent', 'wonderful', '💪', '🚀', '😊', '❤️', '🎉', '✨', '🌟'];
+        
+        const negativeWords = ['schlecht', 'schrecklich', 'furchtbar', 'traurig', 'deprimiert', 'müde', 'erschöpft', 'stress', 'gestresst', 'probleme', 'schwierig', 'hart', 'anstrengend', 'negativ', 'sorgen', 'angst', 'ängstlich', 'verzweifelt', 'hoffnungslos', 'verloren', 'enttäuscht', 'frustriert', 'wütend', 'ärger', 'hass', 'schmerz', 'krank', 'krise', 'versagen', 'fehler', 'bad', 'terrible', 'sad', 'hate', 'angry', 'pain', '😢', '😔', '😞', '😟', '😰', '😭'];
+        
+        function analyzeSentiment(text) {
+            const words = text.toLowerCase().split(/\s+/);
+            let score = 0;
+            
+            words.forEach(word => {
+                if (positiveWords.some(pw => word.includes(pw) || pw.includes(word))) {
+                    score += 1;
+                }
+                if (negativeWords.some(nw => word.includes(nw) || nw.includes(word))) {
+                    score -= 1;
+                }
+            });
+            
+            return { score: score };
+        }
+        
+        // Keywords zum Hervorheben
+        const keywords = ['motivation', 'fitness', 'routine', 'meditation', 'gesundheit', 'sport', 'erfolg', 'ziel', 'disziplin', 'training', 'mindset', 'lifestyle', 'wellness', 'balance', 'produktivität'];
+        
+        // Beispiel-Posts für Demo
+        const samplePosts = [
+            {
+                username: "FitnessGuru23",
+                content: "Heute war mein bestes Training bisher! Die Motivation ist auf einem neuen Level. 💪",
+                timestamp: new Date(Date.now() - 300000),
+                type: "text"
+            },
+            {
+                username: "CodeNinja",
+                content: `// Motivations-Generator für lvlup Life! 🚀
+const motivationalQuotes = [
+    "Du schaffst das!",
+    "Jeder Tag ist eine neue Chance!",
+    "Bleib dran, es lohnt sich!",
+    "Du bist stärker als du denkst!"
+];
+
+function getMotivation() {
+    const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
+    console.log("💪 " + motivationalQuotes[randomIndex]);
+    return motivationalQuotes[randomIndex];
+}
+
+getMotivation();`,
+                timestamp: new Date(Date.now() - 450000),
+                type: "code"
+            },
+            {
+                username: "MindfulMarie",
+                content: "Meditation am Morgen bringt mir so viel Ruhe für den Tag. Routine ist wirklich wichtig!",
+                timestamp: new Date(Date.now() - 600000),
+                type: "text"
+            },
+            {
+                username: "JSMaster",
+                content: `// Fitness-Tracker Calculator
+function calculateBMI(weight, height) {
+    const bmi = weight / (height * height);
+    console.log(\`Dein BMI: \${bmi.toFixed(1)}\`);
+    
+    if (bmi < 18.5) return "Untergewicht";
+    if (bmi < 25) return "Normalgewicht";
+    if (bmi < 30) return "Übergewicht";
+    return "Adipositas";
+}
+
+// Beispiel:
+const result = calculateBMI(70, 1.75);
+console.log("Status:", result);`,
+                timestamp: new Date(Date.now() - 750000),
+                type: "code"
+            },
+            {
+                username: "HealthyHans",
+                content: "Manchmal ist es schwer, die Balance zwischen Arbeit und Fitness zu finden...",
+                timestamp: new Date(Date.now() - 900000),
+                type: "text"
+            },
+            {
+                username: "MotivationMax",
+                content: "Jeder Tag ist eine neue Chance, besser zu werden! Meine Routine hilft mir dabei 🚀",
+                timestamp: new Date(Date.now() - 1200000),
+                type: "text"
+            }
+        ];
+
+        // Initialisierung
+        document.addEventListener('DOMContentLoaded', function() {
+            // Beispiel-User für Demo
+            users = {
+                'demo': { username: 'demo', email: 'demo@lvluplife.com', password: 'demo123' },
+                'admin': { username: 'admin', email: 'admin@lvluplife.com', password: 'admin123' }
+            };
+            
+            // Sample Posts laden
+            samplePosts.forEach(post => addPost(post.username, post.content, post.timestamp, post.type || 'text'));
+            
+            // Event Listeners
+            document.getElementById('postBtn').addEventListener('click', handleNewPost);
+            document.getElementById('postInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    handleNewPost();
+                }
+            });
+            
+            // Auth Event Listeners
+            setupAuthEventListeners();
+            
+            // Post Type Event Listeners
+            setupPostTypeListeners();
+            
+            // Initiale Updates
+            updateAnalytics();
+            updateUIForUser();
+        });
+
+        function handleNewPost() {
+            const input = document.getElementById('postInput');
+            const content = input.value.trim();
+            
+            if (!currentUser) {
+                alert('Bitte logge dich ein, um zu posten!');
+                showAuthModal(true);
+                return;
+            }
+            
+            if (content) {
+                addPost(currentUser.username, content, new Date(), currentPostType);
+                input.value = '';
+                updateAnalytics();
+            }
+        }
+
+        function addPost(username, content, timestamp = new Date(), type = 'text') {
+            const post = {
+                id: 'post_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+                username: username,
+                content: content,
+                timestamp: timestamp,
+                type: type
+            };
+            
+            posts.unshift(post);
+            renderPost(post);
+            if (type === 'text') {
+                updateWordFrequency(content);
+            }
+        }
+
+        function renderPost(post) {
+            const postsContainer = document.getElementById('posts');
+            const postElement = document.createElement('div');
+            
+            // Sentiment Analyse nur für Text-Posts
+            let sentimentClass = 'neutral', sentimentLabel = 'Neutral', sentimentBadge = 'sentiment-neutral';
+            
+            if (post.type === 'text') {
+                const sentimentResult = analyzeSentiment(post.content);
+                
+                if (sentimentResult.score > 0) {
+                    sentimentClass = 'positive';
+                    sentimentLabel = 'Positiv';
+                    sentimentBadge = 'sentiment-positive';
+                } else if (sentimentResult.score < 0) {
+                    sentimentClass = 'negative';
+                    sentimentLabel = 'Negativ';
+                    sentimentBadge = 'sentiment-negative';
+                }
+            } else if (post.type === 'code') {
+                sentimentClass = 'neutral';
+                sentimentLabel = 'Code';
+                sentimentBadge = 'sentiment-neutral';
+            }
+            
+            postElement.className = `post ${sentimentClass}`;
+            
+            let contentHtml;
+            if (post.type === 'code') {
+                const codeLines = post.content.split('\n');
+                const totalLines = codeLines.length;
+                
+                contentHtml = `
+                    <div class="code-stats">${totalLines} Zeilen JavaScript</div>
+                    <div class="code-post">${escapeHtml(post.content)}</div>
+                    <div class="code-actions">
+                        <button class="code-btn run-btn" onclick="runCode('${post.id}')">▶️ Ausführen</button>
+                        <button class="code-btn copy-btn" onclick="copyCode('${post.id}')">📋 Kopieren</button>
+                    </div>
+                    <div id="output-${post.id}" class="code-output" style="display: none;"></div>
+                `;
+            } else {
+                const highlightedContent = highlightKeywords(post.content);
+                contentHtml = `<div class="post-content">${highlightedContent}</div>`;
+            }
+            
+            postElement.innerHTML = `
+                <div class="post-header">
+                    <div class="avatar">${post.username.charAt(0).toUpperCase()}</div>
+                    <div class="post-info">
+                        <div class="username">${post.username}</div>
+                        <div class="timestamp">${formatTimestamp(post.timestamp)}</div>
+                    </div>
+                    <div class="sentiment-badge ${sentimentBadge}">${sentimentLabel}</div>
+                </div>
+                ${contentHtml}
+            `;
+            
+            postsContainer.insertBefore(postElement, postsContainer.firstChild);
+        }
+
+        function highlightKeywords(content) {
+            let highlightedContent = content;
+            keywords.forEach(keyword => {
+                const regex = new RegExp(`\\b(${keyword})\\b`, 'gi');
+                highlightedContent = highlightedContent.replace(regex, '<span class="keyword-highlight">$1</span>');
+            });
+            return highlightedContent;
+        }
+
+        function updateWordFrequency(content) {
+            const words = content.toLowerCase()
+                .replace(/[^\wäöüß\s]/g, '')
+                .split(/\s+/)
+                .filter(word => word.length > 2 && !['der', 'die', 'das', 'und', 'ist', 'ich', 'mit', 'auf', 'für', 'eine', 'ein', 'von', 'zu', 'den', 'sich', 'nicht', 'war', 'sind', 'haben', 'wird', 'kann', 'auch', 'noch', 'wie', 'nur', 'aber', 'oder', 'wenn', 'dann', 'hier', 'dort', 'schon', 'heute', 'morgen', 'gestern'].includes(word));
+            
+            words.forEach(word => {
+                wordFrequency[word] = (wordFrequency[word] || 0) + 1;
+            });
+        }
+
+        function updateAnalytics() {
+            updateTopWords();
+            updateSentimentStats();
+            updateTrends();
+        }
+
+        function updateTopWords() {
+            const topWords = Object.entries(wordFrequency)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 5);
+            
+            const topWordsContainer = document.getElementById('topWords');
+            topWordsContainer.innerHTML = '';
+            
+            topWords.forEach(([word, count]) => {
+                const item = document.createElement('div');
+                item.className = 'stats-item';
+                item.innerHTML = `
+                    <span style="text-transform: capitalize;">${word}</span>
+                    <span class="stats-count">${count}</span>
+                `;
+                topWordsContainer.appendChild(item);
+            });
+            
+            if (topWords.length === 0) {
+                topWordsContainer.innerHTML = '<div style="text-align: center; color: #666;">Noch keine Daten verfügbar</div>';
+            }
+        }
+
+        function updateSentimentStats() {
+            let positive = 0, negative = 0, neutral = 0;
+            
+            posts.forEach(post => {
+                const sentimentResult = analyzeSentiment(post.content);
+                if (sentimentResult.score > 0) positive++;
+                else if (sentimentResult.score < 0) negative++;
+                else neutral++;
+            });
+            
+            document.getElementById('positiveCount').textContent = positive;
+            document.getElementById('neutralCount').textContent = neutral;
+            document.getElementById('negativeCount').textContent = negative;
+        }
+
+        function updateTrends() {
+            const trendsContainer = document.getElementById('trends');
+            const recentPosts = posts.slice(0, 10);
+            
+            if (recentPosts.length < 5) {
+                trendsContainer.innerHTML = '<div style="text-align: center; color: #666;">Mehr Posts für Trend-Analyse benötigt</div>';
+                return;
+            }
+            
+            // Vereinfachte Trend-Erkennung
+            const recentWords = {};
+            recentPosts.forEach(post => {
+                const words = post.content.toLowerCase()
+                    .replace(/[^\wäöüß\s]/g, '')
+                    .split(/\s+/)
+                    .filter(word => keywords.includes(word));
+                
+                words.forEach(word => {
+                    recentWords[word] = (recentWords[word] || 0) + 1;
+                });
+            });
+            
+            const trendingWords = Object.entries(recentWords)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 3);
+            
+            trendsContainer.innerHTML = '';
+            
+            if (trendingWords.length === 0) {
+                trendsContainer.innerHTML = '<div style="text-align: center; color: #666;">Keine aktuellen Trends</div>';
+                return;
+            }
+            
+            trendingWords.forEach(([word, count]) => {
+                const item = document.createElement('div');
+                item.className = 'trend-item';
+                item.innerHTML = `
+                    <span class="trend-arrow trend-up">📈</span>
+                    <span style="flex: 1; text-transform: capitalize;">${word}</span>
+                    <span class="stats-count">${count}</span>
+                `;
+                trendsContainer.appendChild(item);
+            });
+        }
+
+        function formatTimestamp(timestamp) {
+            const now = new Date();
+            const diff = now - timestamp;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            
+            if (minutes < 1) return 'Gerade eben';
+            if (minutes < 60) return `vor ${minutes}m`;
+            if (hours < 24) return `vor ${hours}h`;
+            return timestamp.toLocaleDateString('de-DE');
+        }
+
+        // Demo-Modus: Automatische Posts alle 30 Sekunden (optional)
+        const demoMode = false;
+        if (demoMode) {
+            const demoPosts = [
+                "Gerade 5km gelaufen! Die Motivation war heute besonders hoch 🏃‍♂️",
+                "Meditation hilft mir wirklich dabei, meine Routine zu verbessern",
+                "Manchmal ist Disziplin schwer, aber die Ergebnisse sind es wert",
+                "Fitness ist nicht nur körperlich - auch mental wird man stärker!",
+                "Heute war ein herausfordernder Tag, aber ich bleibe positiv"
+            ];
+            
+            let demoIndex = 0;
+            setInterval(() => {
+                if (demoIndex < demoPosts.length) {
+                    addPost(`DemoUser${demoIndex + 1}`, demoPosts[demoIndex]);
+                    updateAnalytics();
+                    demoIndex++;
+                }
+            }, 30000);
+        }
+
+        // Authentication System
+        function setupAuthEventListeners() {
+            // Modal öffnen/schließen
+            document.getElementById('loginBtn').addEventListener('click', () => showAuthModal(true));
+            document.getElementById('registerBtn').addEventListener('click', () => showAuthModal(false));
+            document.getElementById('authCloseBtn').addEventListener('click', hideAuthModal);
+            
+            // Modal-Wechsel zwischen Login/Register
+            document.getElementById('authSwitchLink').addEventListener('click', toggleAuthMode);
+            
+            // Form Submit
+            document.getElementById('authForm').addEventListener('submit', handleAuthSubmit);
+            
+            // User Menu
+            document.getElementById('userAvatar').addEventListener('click', toggleUserMenu);
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            
+            // Klick außerhalb schließt Modal
+            document.getElementById('authOverlay').addEventListener('click', function(e) {
+                if (e.target === this) hideAuthModal();
+            });
+            
+            // Klick außerhalb schließt User Menu
+            document.addEventListener('click', function(e) {
+                if (!document.getElementById('userMenu').contains(e.target)) {
+                    document.getElementById('userDropdown').classList.remove('show');
+                }
+            });
+        }
+
+        function showAuthModal(loginMode) {
+            isLoginMode = loginMode;
+            updateAuthModal();
+            document.getElementById('authOverlay').classList.remove('hidden');
+        }
+
+        function hideAuthModal() {
+            document.getElementById('authOverlay').classList.add('hidden');
+            // Form zurücksetzen
+            document.getElementById('authForm').reset();
+        }
+
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            updateAuthModal();
+        }
+
+        function updateAuthModal() {
+            const title = document.getElementById('authTitle');
+            const emailInput = document.getElementById('emailInput');
+            const confirmPasswordInput = document.getElementById('confirmPasswordInput');
+            const submitBtn = document.getElementById('authSubmitBtn');
+            const switchText = document.getElementById('authSwitchText');
+            const switchLink = document.getElementById('authSwitchLink');
+
+            if (isLoginMode) {
+                title.textContent = 'Anmelden';
+                emailInput.style.display = 'none';
+                confirmPasswordInput.style.display = 'none';
+                submitBtn.textContent = 'Anmelden';
+                switchText.textContent = 'Noch kein Account?';
+                switchLink.textContent = 'Jetzt registrieren';
+            } else {
+                title.textContent = 'Registrieren';
+                emailInput.style.display = 'block';
+                confirmPasswordInput.style.display = 'block';
+                submitBtn.textContent = 'Account erstellen';
+                switchText.textContent = 'Bereits registriert?';
+                switchLink.textContent = 'Jetzt anmelden';
+            }
+        }
+
+        function handleAuthSubmit(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('usernameInput').value.trim();
+            const email = document.getElementById('emailInput').value.trim();
+            const password = document.getElementById('passwordInput').value;
+            const confirmPassword = document.getElementById('confirmPasswordInput').value;
+
+            if (isLoginMode) {
+                // Login
+                if (users[username] && users[username].password === password) {
+                    currentUser = users[username];
+                    hideAuthModal();
+                    updateUIForUser();
+                    showNotification('Erfolgreich angemeldet!', 'success');
+                } else {
+                    showNotification('Falscher Benutzername oder Passwort!', 'error');
+                }
+            } else {
+                // Registration
+                if (users[username]) {
+                    showNotification('Benutzername bereits vergeben!', 'error');
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    showNotification('Passwörter stimmen nicht überein!', 'error');
+                    return;
+                }
+
+                if (password.length < 6) {
+                    showNotification('Passwort muss mindestens 6 Zeichen haben!', 'error');
+                    return;
+                }
+
+                // User erstellen
+                users[username] = { username, email, password };
+                currentUser = users[username];
+                hideAuthModal();
+                updateUIForUser();
+                showNotification('Account erfolgreich erstellt!', 'success');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            updateUIForUser();
+            showNotification('Erfolgreich abgemeldet!', 'success');
+            document.getElementById('userDropdown').classList.remove('show');
+        }
+
+        function toggleUserMenu() {
+            document.getElementById('userDropdown').classList.toggle('show');
+        }
+
+        function updateUIForUser() {
+            const guestButtons = document.getElementById('guestButtons');
+            const userMenu = document.getElementById('userMenu');
+            const userAvatar = document.getElementById('userAvatar');
+            
+            if (currentUser) {
+                guestButtons.classList.add('hidden');
+                userMenu.classList.remove('hidden');
+                userAvatar.textContent = currentUser.username.charAt(0).toUpperCase();
+            } else {
+                guestButtons.classList.remove('hidden');
+                userMenu.classList.add('hidden');
+            }
+            
+            // Update post input placeholder based on current type
+            switchPostType(currentPostType);
+        }
+
+        function showNotification(message, type) {
+            // Einfache Notification
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 10px;
+                color: white;
+                font-weight: bold;
+                z-index: 9999;
+                animation: slideIn 0.3s ease;
+                background: ${type === 'success' ? '#28a745' : '#dc3545'};
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            // Style für Animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+
+            setTimeout(() => {
+                notification.remove();
+                style.remove();
+            }, 3000);
+        }
+
+        // Post Type System
+        function setupPostTypeListeners() {
+            const textBtn = document.getElementById('textPostBtn');
+            const codeBtn = document.getElementById('codePostBtn');
+            const postInput = document.getElementById('postInput');
+            
+            textBtn.addEventListener('click', () => switchPostType('text'));
+            codeBtn.addEventListener('click', () => switchPostType('code'));
+        }
+
+        function switchPostType(type) {
+            currentPostType = type;
+            const textBtn = document.getElementById('textPostBtn');
+            const codeBtn = document.getElementById('codePostBtn');
+            const postInput = document.getElementById('postInput');
+            
+            // Button States
+            textBtn.classList.toggle('active', type === 'text');
+            codeBtn.classList.toggle('active', type === 'code');
+            
+            // Input Styling and Placeholder
+            if (type === 'code') {
+                postInput.classList.add('code-input');
+                postInput.placeholder = currentUser ? 
+                    `// ${currentUser.username}, teile deinen JavaScript-Code!\nconsole.log("Hello lvlup Life!");` :
+                    '// Melde dich an, um Code zu posten...';
+                postInput.style.minHeight = '120px';
+            } else {
+                postInput.classList.remove('code-input');
+                postInput.placeholder = currentUser ?
+                    `Was denkst du, ${currentUser.username}? Teile deine Gedanken...` :
+                    'Melde dich an, um zu posten...';
+                postInput.style.minHeight = '80px';
+            }
+        }
+
+        // Code Execution Functions
+        function runCode(postId) {
+            const post = posts.find(p => p.id == postId);
+            if (!post || post.type !== 'code') return;
+            
+            const outputDiv = document.getElementById(`output-${postId}`);
+            outputDiv.style.display = 'block';
+            outputDiv.classList.remove('code-error');
+            
+            // Override console methods for capturing output
+            const originalLog = console.log;
+            const originalError = console.error;
+            const originalWarn = console.warn;
+            
+            let output = [];
+            
+            console.log = (...args) => {
+                output.push('LOG: ' + args.map(arg => 
+                    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+                ).join(' '));
+                originalLog.apply(console, args);
+            };
+            
+            console.error = (...args) => {
+                output.push('ERROR: ' + args.map(arg => String(arg)).join(' '));
+                originalError.apply(console, args);
+            };
+            
+            console.warn = (...args) => {
+                output.push('WARN: ' + args.map(arg => String(arg)).join(' '));
+                originalWarn.apply(console, args);
+            };
+            
+            try {
+                // Create a sandbox function for safer execution
+                const sandboxedCode = `
+                    (function() {
+                        // Restrict dangerous operations
+                        const window = undefined;
+                        const document = undefined;
+                        const eval = undefined;
+                        const Function = undefined;
+                        
+                        ${post.content}
+                    })();
+                `;
+                
+                const result = eval(sandboxedCode);
+                if (result !== undefined) {
+                    output.push('RETURN: ' + (typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result)));
+                }
+                
+                if (output.length === 0) {
+                    output.push('Code ausgeführt (keine Ausgabe)');
+                }
+                
+            } catch (error) {
+                output.push('ERROR: ' + error.message);
+                outputDiv.classList.add('code-error');
+            } finally {
+                // Restore console methods
+                console.log = originalLog;
+                console.error = originalError;
+                console.warn = originalWarn;
+            }
+            
+            outputDiv.textContent = output.join('\n');
+            
+            // Auto-scroll to output
+            outputDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function copyCode(postId) {
+            const post = posts.find(p => p.id == postId);
+            if (!post || post.type !== 'code') return;
+            
+            navigator.clipboard.writeText(post.content).then(() => {
+                showNotification('Code kopiert! 📋', 'success');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = post.content;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showNotification('Code kopiert! 📋', 'success');
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
